@@ -3,12 +3,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:hitpay/BorrowScreen.dart';
 import 'package:hitpay/Cells/TransactionCell.dart';
+import 'package:hitpay/ChangePasswordScreen.dart';
 import 'package:hitpay/Common/SharedData.dart';
 import 'package:hitpay/CreateUserScreen.dart';
 import 'package:hitpay/Models/Transaction.dart';
+import 'package:hitpay/TransactionsHistoryScreen.dart';
 import 'package:hitpay/Utils/DBHelper.dart';
 
+import 'Common/ColorDF.dart';
+import 'Common/Common.dart';
 import 'DialogAddScreen.dart';
 import 'Models/User.dart';
 import 'Utils/FormatDate.dart';
@@ -52,14 +57,7 @@ class HomepageState extends State<Homepage>{
     DBHelper.db.getAllTransactionDMY(DateTime.now().day,DateTime.now().month,DateTime.now().year).then((list){
       setState(() {
         listTrans=list;
-        double income=0, outcome = 0;
-        for (Transactions trans in listTrans){
-          if (trans.type == 1) income += trans.value;
-          else outcome += trans.value;
-        }
-        strIncome = income.toString();
-        strOutcome = outcome.toString();
-        strBalance = ((income>outcome)?"+":"")+(income-outcome).toString();
+        ComputeBalance();
       });
     });
 
@@ -74,7 +72,7 @@ class HomepageState extends State<Homepage>{
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           SpinKitWanderingCubes(
-            color: Colors.blueAccent,
+            color: Colors.black,
             size: 50,
           ),
           Padding(
@@ -92,14 +90,7 @@ class HomepageState extends State<Homepage>{
     int year=DateTime.now().year;
     DBHelper.db.getAllTransactionDMY(day, month, year).then((list){
       listTrans=list;
-      double income=0, outcome = 0;
-      for (Transactions trans in listTrans){
-        if (trans.type == 1) income += trans.value;
-        else outcome += trans.value;
-      }
-      strIncome = income.toString();
-      strOutcome = outcome.toString();
-      strBalance = ((income>outcome)?"+":"")+(income-outcome).toString();
+      ComputeBalance();
     });
     return !check;
   }
@@ -112,11 +103,15 @@ class HomepageState extends State<Homepage>{
     if (SharedData.sharedData.user==null) return Waiting();
     return listUser == null ? Waiting() : Scaffold(
       appBar: AppBar(
+        backgroundColor: ColorDF.Appbar,
         title: Text("Dashboard"),
         actions: <Widget>[
           Container(
             alignment: Alignment.bottomRight,
-            child: Text(SharedData.sharedData.user.walletValue.toString()+" VND", style: TextStyle(color:Colors.white, fontStyle: FontStyle.italic, fontSize: 12),),
+            child: Padding(
+              padding: EdgeInsets.only(right:20),
+              child: Text(SharedData.sharedData.user.walletValue.toString()+" VND", style: TextStyle(color:Colors.white, fontStyle: FontStyle.italic, fontSize: 12),),
+            ),
           )
         ],
       ),
@@ -124,6 +119,9 @@ class HomepageState extends State<Homepage>{
         child: Column(
           children: <Widget>[
             DrawerHeader(
+              decoration: BoxDecoration(
+                color: ColorDF.Appbar,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -136,18 +134,62 @@ class HomepageState extends State<Homepage>{
                   ),
                   Row(
                     children: <Widget>[
-                      Text("Name: ",style: TextStyle(fontSize: 16),),
-                      Text(SharedData.sharedData.user.name==null?"":SharedData.sharedData.user.name,style: TextStyle(color: Colors.purple, fontSize: 16),)
+                      Text("Name: ",style: TextStyle(fontSize: 16,color: Colors.white),),
+                      Text(SharedData.sharedData.user.name==null?"":SharedData.sharedData.user.name,style: TextStyle(color: Colors.white, fontSize: 16),)
                     ],
                   ),
                   Row(
                     children: <Widget>[
-                      Text("Wallet:", style: TextStyle(fontSize: 16),),
-                      Text(SharedData.sharedData.user.walletValue.toString() +" VND",style: TextStyle(color:Colors.red, fontSize: 16),)
+                      Text("Wallet: ", style: TextStyle(fontSize: 16,color: Colors.white),),
+                      Text(SharedData.sharedData.user.walletValue.toString() +" VND",style: TextStyle(color:Colors.white, fontSize: 16),)
                     ],
                   )
                 ],
               ),
+            ),
+
+            ListTile(
+              title: Text("Borrow - pay"),
+              onTap: (){
+                Navigator.push(context, new MaterialPageRoute(builder: (context)=>new BorrowScreen())).then((onValue){
+                  DBHelper.db.getAllTransactionDMY(DateTime.now().day, DateTime.now().month, DateTime.now().year).then((list){
+                    setState(() {
+                      listTrans=list;
+                      ComputeBalance();
+                    });
+                  });
+                });
+              },
+            ),
+
+            ListTile(
+              title: Text('Manage transactions history'),
+              onTap: (){
+                Navigator.push(context, new MaterialPageRoute(builder: (context)=> new TransactionsHistoryScreen())).then((onValue){
+                  DBHelper.db.getAllTransactionDMY(DateTime.now().day, DateTime.now().month, DateTime.now().year).then((list){
+                    setState(() {
+                      listTrans=list;
+                      ComputeBalance();
+                    });
+                  });
+                });
+              },
+            ),
+
+            ListTile(
+              title: Text('Change password'),
+              onTap: (){
+                Navigator.of(context).push(new MaterialPageRoute(builder: (context)=> new ChangePasswordScreen()));
+              },
+            ),
+
+            ListTile(
+              title: Text('Reset database'),
+              onTap: (){
+                DBHelper.db.DropTable().then((onValue){
+
+                });
+              },
             ),
           ],
         ),
@@ -158,14 +200,14 @@ class HomepageState extends State<Homepage>{
             children: <Widget>[
               Container(
                 padding: EdgeInsets.only(top:5),
-                child: Text(FormatDate.ToString(DateTime.now()), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+                child: Text(FormatDate.ToString(DateTime.now()), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),),
               ),
 
               Container(
                 margin: EdgeInsets.only(left:10,right:10),
                 height: 120,
                 child: Card(
-                    elevation: 5,
+                    elevation: 3,
                     child: Stack(
                       children: <Widget>[
                         Row(
@@ -173,13 +215,13 @@ class HomepageState extends State<Homepage>{
                             Container(
                               child: Column(
                                 children: <Widget>[
-                                  Text("Income",style: TextStyle(color: Colors.white),),
-                                  Text("+"+strIncome,style: TextStyle(color: Colors.white),)
+                                  Text("Income",style: TextStyle(color: Colors.black),),
+                                  Text("+"+strIncome,style: TextStyle(color: Colors.black),)
                                 ],
                                 mainAxisAlignment: MainAxisAlignment.center,
                               ),
                               decoration: BoxDecoration(
-                                  color: Colors.blueAccent
+                                  color: ColorDF.Income,
                               ),
                               height: 120,
                               width: MediaQuery.of(context).size.width/2-14,
@@ -187,13 +229,13 @@ class HomepageState extends State<Homepage>{
                             Container(
                               child: Column(
                                 children: <Widget>[
-                                  Text("Outcome",style: TextStyle(color: Colors.white),),
-                                  Text("-"+strOutcome,style: TextStyle(color: Colors.white),)
+                                  Text("Outcome",style: TextStyle(color: Colors.black),),
+                                  Text("-"+strOutcome,style: TextStyle(color: Colors.black),)
                                 ],
                                 mainAxisAlignment: MainAxisAlignment.center,
                               ),
                               decoration: BoxDecoration(
-                                  color: Colors.pinkAccent
+                                  color: ColorDF.Outcome,
                               ),
                               height: 120,
                               width: MediaQuery.of(context).size.width/2-14,
@@ -202,17 +244,19 @@ class HomepageState extends State<Homepage>{
                         ),
                         Container(
                           alignment: Alignment.center,
-                          child: Card(
-                            child: Container(
-                              width: MediaQuery.of(context).size.width/2-100,
-                              height: 80,
-                              child: Column(
-                                children: <Widget>[
-                                  Text("Balance",style: TextStyle(color: Colors.black),),
-                                  Text(strBalance,style: TextStyle(color: Colors.black),)
-                                ],
-                                mainAxisAlignment: MainAxisAlignment.center,
-                              ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: ColorDF.Balance,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            width: MediaQuery.of(context).size.width/2-100,
+                            height: 80,
+                            child: Column(
+                              children: <Widget>[
+                                Text("Balance",style: TextStyle(color: Colors.black),),
+                                Text(strBalance,style: TextStyle(color: Colors.black),)
+                              ],
+                              mainAxisAlignment: MainAxisAlignment.center,
                             ),
                           ),
                         )
@@ -234,11 +278,12 @@ class HomepageState extends State<Homepage>{
               )
             ],
           ),
+
           Container(
-            margin: EdgeInsets.only(right:10,bottom: 10),
+            margin: EdgeInsets.only(right:20,bottom: 20),
             alignment: Alignment.bottomRight,
             child: FloatingActionButton(
-              backgroundColor: Colors.orange,
+              backgroundColor: ColorDF.Appbar2,
               child: Icon(Icons.add),
               onPressed: () {
                 CreateDialogAdd(context).then((onValue){
@@ -248,14 +293,7 @@ class HomepageState extends State<Homepage>{
                   DBHelper.db.getAllTransactionDMY(day, month, year).then((list){
                     setState(() {
                       listTrans=list;
-                      double income=0, outcome = 0;
-                      for (Transactions trans in listTrans){
-                        if (trans.type == 1) income += trans.value;
-                        else outcome += trans.value;
-                      }
-                      strIncome = income.toString();
-                      strOutcome = outcome.toString();
-                      strBalance = ((income>outcome)?"+":"")+(income-outcome).toString();
+                      ComputeBalance();
                     });
                   });
                 });
@@ -265,6 +303,18 @@ class HomepageState extends State<Homepage>{
         ],
       ),
     );
+  }
+
+  void ComputeBalance()
+  {
+    double income=0, outcome = 0;
+    for (Transactions trans in listTrans){
+      if (trans.type == 0) outcome += trans.value;
+      else income += trans.value;
+    }
+    strIncome = Common.FormatMoney(income.toInt().toString());
+    strOutcome = Common.FormatMoney(outcome.toInt().toString());
+    strBalance = ((income>outcome)?"+":"")+Common.FormatMoney((income-outcome).toInt().toString());
   }
 
   Future CreateDialogAdd(BuildContext context)

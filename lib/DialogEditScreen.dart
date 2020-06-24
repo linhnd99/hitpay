@@ -7,23 +7,41 @@ import 'package:hitpay/Common/SharedData.dart';
 import 'Models/Transaction.dart';
 import 'Utils/DBHelper.dart';
 
-class DialogAdd extends StatefulWidget{
+class DialogEditScreen extends StatefulWidget{
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return DialogAddState();
+    return DialogEditState();
   }
 }
 
-class DialogAddState extends State<DialogAdd>{
+class DialogEditState extends State<DialogEditScreen>{
   TextEditingController _txtContent = new TextEditingController();
   TextEditingController _txtValue = new TextEditingController();
   int selectRadio;
+  int id;
 
   @override
   void initState() {
-    selectRadio=0;
-    super.initState();
+    selectRadio=SharedData.sharedData.currentTrans.type;
+    this.id = SharedData.sharedData.currentTrans.id;
+    _txtContent.text = SharedData.sharedData.currentTrans.content;
+    _txtValue.text = moneyToString(SharedData.sharedData.currentTrans.value.round().toString());
+
+  }
+
+  String moneyToString(String value)
+  {
+    value=value.replaceAll(RegExp(','),'');
+    int d=0;
+    for (int i=value.length-1;i>=0;i--){
+      d++;
+      if (d%3==0){
+        value = value.substring(0,i)+","+value.substring(i,value.length);
+      }
+    }
+    if (value[0]==',') value=value.replaceRange(0, 1, '');
+    return value;
   }
 
   @override
@@ -32,7 +50,7 @@ class DialogAddState extends State<DialogAdd>{
     return AlertDialog(
       title: Column(
         children: <Widget>[
-          Text("Add transaction",style: TextStyle(fontSize: 16),),
+          Text("Edit transaction",style: TextStyle(fontSize: 16),),
           TextField(
             decoration: InputDecoration(
                 labelText: "Content"
@@ -45,17 +63,7 @@ class DialogAddState extends State<DialogAdd>{
             ),
             controller: _txtValue,
             onChanged: (String value){
-              value=value.replaceAll(RegExp(','),'');
-              int d=0;
-              for (int i=value.length-1;i>=0;i--){
-                d++;
-                if (d%3==0){
-                  value = value.substring(0,i)+","+value.substring(i,value.length);
-                  //i-=2;
-                }
-              }
-              if (value[0]==',') value=value.replaceRange(0, 1, '');
-              _txtValue.text = value;
+              _txtValue.text = moneyToString(value);
             },
             keyboardType: TextInputType.number,
           ),
@@ -84,6 +92,37 @@ class DialogAddState extends State<DialogAdd>{
         ],
       ),
       actions: <Widget>[
+        FlatButton(
+          child: Text('Delete',style: TextStyle(color: Colors.red),),
+          onPressed: (){
+            showDialog(context: context, builder: (context)=>AlertDialog(
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text('Are you sure?')
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text('YES'),
+                  onPressed: () {
+                    DBHelper.db.DeleteTransactionWithID(SharedData.sharedData.currentTrans.id);
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                FlatButton(
+                  child: Text('NO'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ));
+          },
+        ),
+
         FlatButton(
           child: Text("Submit",style: TextStyle(color: Colors.blueAccent),),
           onPressed: (){
@@ -121,14 +160,7 @@ class DialogAddState extends State<DialogAdd>{
             }
 
 
-            DBHelper.db.InsertTransaction(trans);
-            if (trans.type == 1) {
-              SharedData.sharedData.user.walletValue+=trans.value;
-            }
-            else {
-              SharedData.sharedData.user.walletValue-=trans.value;
-            }
-            DBHelper.db.UpdateUser(SharedData.sharedData.user);
+            DBHelper.db.EditTransaction(trans);
             Navigator.of(context).pop();
           },
         ),

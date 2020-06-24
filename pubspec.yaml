@@ -24,6 +24,7 @@ dependencies:
   flutter_secure_storage: ^3.3.3
   sqflite: any
   flutter_spinkit: any
+  cupertino_date_textbox: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

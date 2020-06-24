@@ -1,3 +1,4 @@
+import 'package:hitpay/Models/Transaction.dart';
 import 'package:hitpay/Models/User.dart';
 
 class SharedData {
@@ -5,4 +6,5 @@ class SharedData {
   static SharedData sharedData = SharedData._();
 
   User user;
+  Transactions currentTrans;
 }

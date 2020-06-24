@@ -35,18 +35,11 @@ class Transactions {
   static fromMap(Map<String, dynamic> json) => new Transactions(
     id: json["id"],
     content: json["content"],
-    type: (json["type"].toString() == "1")?1:0,
+    type: json["type"],
     value: double.parse(json["value"].toString()),
     day: json["day"],
     month: json["month"],
     year: json["year"],
   );
 
-//  Map<String, dynamic> toMap() => {
-//    'id':this.id,
-//    'content':this.content,
-//    'value': this.value,
-//    'type': this.type,
-//    'datetime': this.datetime
-//  };
 }

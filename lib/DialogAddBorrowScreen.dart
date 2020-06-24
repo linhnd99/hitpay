@@ -1,30 +1,22 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hitpay/Common/SharedData.dart';
 
+import 'Common/SharedData.dart';
 import 'Models/Transaction.dart';
 import 'Utils/DBHelper.dart';
 
-class DialogAdd extends StatefulWidget{
+class DialogAddBorrowScreen extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return DialogAddState();
+    return DialogAddBorrowScreenState();
   }
 }
 
-class DialogAddState extends State<DialogAdd>{
+class DialogAddBorrowScreenState extends State<DialogAddBorrowScreen> {
   TextEditingController _txtContent = new TextEditingController();
   TextEditingController _txtValue = new TextEditingController();
-  int selectRadio;
 
-  @override
-  void initState() {
-    selectRadio=0;
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +24,10 @@ class DialogAddState extends State<DialogAdd>{
     return AlertDialog(
       title: Column(
         children: <Widget>[
-          Text("Add transaction",style: TextStyle(fontSize: 16),),
+          Text("Add borrow",style: TextStyle(fontSize: 16),),
           TextField(
             decoration: InputDecoration(
-                labelText: "Content"
+                labelText: "Who?"
             ),
             controller: _txtContent,
           ),
@@ -59,28 +51,6 @@ class DialogAddState extends State<DialogAdd>{
             },
             keyboardType: TextInputType.number,
           ),
-          RadioListTile(
-            groupValue: selectRadio,
-            value: 1,
-            title: Text("Income", style: TextStyle(color: Colors.blueAccent),),
-            selected: selectRadio == 1,
-            onChanged: (value){
-              setState(() {
-                selectRadio = 1;
-              });
-            },
-          ),
-          RadioListTile(
-            groupValue: selectRadio,
-            value: 0,
-            title: Text("Outcome",style: TextStyle(color: Colors.red),),
-            selected: selectRadio == 0,
-            onChanged: (value){
-              setState(() {
-                selectRadio = 0;
-              });
-            },
-          ),
         ],
       ),
       actions: <Widget>[
@@ -89,45 +59,14 @@ class DialogAddState extends State<DialogAdd>{
           onPressed: (){
             Transactions trans = new Transactions();
             trans.content = _txtContent.value.text;
-            trans.type = selectRadio;
+            trans.type = 3;
             trans.value = double.parse(_txtValue.value.text.replaceAll(RegExp(','),''));
             trans.day = DateTime.now().day;
             trans.month = DateTime.now().month;
             trans.year = DateTime.now().year;
 
-            if (trans.type == 0 && trans.value > SharedData.sharedData.user.walletValue) {
-              showDialog(context: context, builder: (context){
-                return AlertDialog(
-                  title: Text('Lỗi'),
-                  content: SingleChildScrollView(
-                    child: ListBody(
-                      children: <Widget>[
-                        Text('Số dư trong ví không đủ')
-                      ],
-                    ),
-                  ),
-                  actions: <Widget>[
-                    FlatButton(
-                      child: Text('OK'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ],
-                );
-              });
-
-              return ;
-            }
-
-
             DBHelper.db.InsertTransaction(trans);
-            if (trans.type == 1) {
-              SharedData.sharedData.user.walletValue+=trans.value;
-            }
-            else {
-              SharedData.sharedData.user.walletValue-=trans.value;
-            }
+            SharedData.sharedData.user.walletValue+=trans.value;
             DBHelper.db.UpdateUser(SharedData.sharedData.user);
             Navigator.of(context).pop();
           },
